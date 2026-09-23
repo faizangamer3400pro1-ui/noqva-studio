@@ -130,7 +130,10 @@ function ChatPage() {
 
   const deleteConversation = async (id: string) => {
     const { error } = await supabase.from("conversations").delete().eq("id", id);
-    if (error) return toast.error("Could not delete that conversation.");
+    if (error) {
+      toast.error("Could not delete that conversation.");
+      return;
+    }
     if (activeId === id) setActiveId(null);
     queryClient.invalidateQueries({ queryKey: ["conversations", userId] });
   };
