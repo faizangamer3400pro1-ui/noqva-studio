@@ -427,7 +427,7 @@ function ChatPage() {
                       {mode === "image" ? "Image mode" : "Document mode"}
                     </span>
                   ) : null}
-                  <PromptInputSubmit status={busy ? "submitted" : undefined} disabled={busy} />
+                  <PromptInputSubmit status={busy ? "submitted" : "ready"} disabled={busy} />
                 </div>
               </PromptInputFooter>
             </PromptInput>
