@@ -58,7 +58,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
           />
         ) : null}
 
-        {!isUser ? (
+        {!isUser || message.image_url || message.video_url ? (
           <div className="mt-1 flex flex-wrap gap-2">
             {message.image_url ? (
               <>
@@ -100,7 +100,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
               </Button>
             ) : null}
 
-            {message.content && !message.image_url ? (
+            {!isUser && message.content && !message.image_url ? (
               <Button
                 variant="secondary"
                 size="sm"
