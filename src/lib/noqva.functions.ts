@@ -7,7 +7,7 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 
 function gatewayMessage(status: number, body: string) {
   if (status === 429) return "Noqva AI is busy right now — please try again in a moment.";
-  if (status === 402) return "AI credits are exhausted. Add credits to keep generating.";
+  if (status === 402) return "Noqva AI is temporarily unavailable. Please try again later.";
   if (status === 403) return "This AI model isn't available for this workspace right now.";
   return `AI request failed (${status}). ${body.slice(0, 200)}`;
 }
