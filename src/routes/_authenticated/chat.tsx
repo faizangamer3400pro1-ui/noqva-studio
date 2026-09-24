@@ -26,6 +26,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { streamImage } from "@/lib/stream-image";
 import logo from "@/assets/noqva-logo.png";
 
 export const Route = createFileRoute("/_authenticated/chat")({
@@ -68,6 +69,7 @@ function ChatPage() {
   const [busy, setBusy] = useState(false);
   const [converting, setConverting] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<{ url: string; final: boolean } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -187,10 +189,25 @@ function ChatPage() {
       const wantsImage = mode === "image" || /^\/image\b/i.test(text);
       if (wantsImage) {
         const prompt = text.replace(/^\/image\s*/i, "").trim() || "a striking abstract artwork";
-        const seed = Math.floor(Math.random() * 1_000_000);
-        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-          prompt,
-        )}?width=1024&height=1024&seed=${seed}&nologo=true`;
+        const { data: authData } = await supabase.auth.getSession();
+        const token = authData.session?.access_token;
+        if (!token) throw new Error("Please sign in again to generate an image.");
+
+        let finalImage = "";
+        setImagePreview(null);
+        await streamImage(
+          "/api/generate-image",
+          { prompt },
+          (url, final) => {
+            setImagePreview({ url, final });
+            if (final) finalImage = url;
+          },
+          { Authorization: `Bearer ${token}` },
+        );
+        if (!finalImage) throw new Error("The final image was not available.");
+
+        const blob = await fetch(finalImage).then((response) => response.blob());
+        const url = await uploadImage(new File([blob], `Noqva_${crypto.randomUUID()}.png`, { type: "image/png" }));
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
@@ -198,6 +215,7 @@ function ChatPage() {
           content: `Generated image — *${prompt}*`,
           image_url: url,
         });
+        setImagePreview(null);
       } else if (text) {
         const history = [...messages, { sender: "user", content: text }]
           .filter((m) => m.content)
@@ -232,6 +250,7 @@ function ChatPage() {
       refreshMessages(conversationId);
       setMode("chat");
     } catch (error) {
+      setImagePreview(null);
       toast.error(error instanceof Error ? error.message : "Something went wrong.");
     } finally {
       setBusy(false);
@@ -343,7 +362,23 @@ function ChatPage() {
               />
             ))}
 
-            {busy ? <Shimmer className="text-sm">Noqva AI is thinking…</Shimmer> : null}
+            {imagePreview ? (
+              <div className="ml-0 max-w-xl self-start overflow-hidden rounded-xl border border-border bg-card">
+                <img
+                  src={imagePreview.url}
+                  alt="Image generation preview"
+                  className={cn(
+                    "aspect-square w-full object-contain transition-[filter] duration-500",
+                    imagePreview.final ? "blur-0" : "blur-2xl",
+                  )}
+                />
+                <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+                  {imagePreview.final ? "Saving full-resolution image…" : "Rendering high-quality image…"}
+                </p>
+              </div>
+            ) : null}
+
+            {busy && !imagePreview ? <Shimmer className="text-sm">Noqva AI is thinking…</Shimmer> : null}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
