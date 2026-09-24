@@ -29,7 +29,7 @@ export const getRouter = () => {
 
     void App.addListener("appUrlOpen", ({ url }) => handleAuthUrl(url));
     void App.getLaunchUrl().then((result) => {
-      if (result?.url) return handleAuthUrl(result.url);
+      if (result?.url) void handleAuthUrl(result.url);
     });
   }
 
