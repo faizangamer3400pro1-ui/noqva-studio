@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { getAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/noqva-logo.png";
 
@@ -53,7 +54,7 @@ function Landing() {
   const signIn = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: getAuthRedirectUrl(),
     });
     if (result.error) {
       setLoading(false);
