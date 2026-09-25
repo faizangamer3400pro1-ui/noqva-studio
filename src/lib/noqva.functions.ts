@@ -17,20 +17,23 @@ export const chatComplete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" }) => input)
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("AI is not configured for this project.");
+    const apiKey = process.env["OPENROUTER_API_KEY"];
+    if (!apiKey) throw new Error("AI chat is not configured for this project.");
 
     const system =
       data.mode === "document"
         ? "You are Noqva AI, a document studio. Produce a complete, well-structured document in clean markdown using headings, short paragraphs and bullet lists. No preamble, no closing chatter — just the document."
         : "You are Noqva AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
 
-    const res = await fetch(`${GATEWAY}/v1/chat/completions`, {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "X-Title": "Noqva AI",
+      },
       body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        reasoning_effort: "low",
+        model: "openrouter/free",
         messages: [{ role: "system", content: system }, ...data.turns.slice(-20)],
       }),
     });

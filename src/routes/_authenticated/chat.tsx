@@ -72,7 +72,13 @@ function ChatPage() {
   const [imagePreview, setImagePreview] = useState<{ url: string; final: boolean } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (data?.user?.id) setUserId(data.user.id);
+        else navigate({ to: "/" });
+      })
+      .catch(() => navigate({ to: "/" }));
   }, []);
 
   const { data: profile } = useQuery({

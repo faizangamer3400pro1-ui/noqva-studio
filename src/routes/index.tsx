@@ -53,16 +53,17 @@ function Landing() {
 
   const signIn = async () => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: getAuthRedirectUrl(),
-    });
-    if (result.error) {
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: getAuthRedirectUrl(),
+      });
+      if (result?.error) throw result.error;
+      if (result?.redirected) return;
+      navigate({ to: "/chat" });
+    } catch {
       setLoading(false);
       toast.error("Could not sign in with Google. Please try again.");
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/chat" });
   };
 
   return (
