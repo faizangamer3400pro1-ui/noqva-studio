@@ -229,8 +229,9 @@ function ChatPage() {
           blob = await fetch(finalImage).then((response) => response.blob());
         }
 
-        const ext = blob.type.includes("png") ? "png" : "jpg";
-        const url = await uploadImage(new File([blob], `Noqva_${crypto.randomUUID()}.${ext}`, { type: blob.type }));
+        const imageBlob: Blob = blob!;
+        const ext = imageBlob.type.includes("png") ? "png" : "jpg";
+        const url = await uploadImage(new File([imageBlob], `Noqva_${crypto.randomUUID()}.${ext}`, { type: imageBlob.type }));
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
