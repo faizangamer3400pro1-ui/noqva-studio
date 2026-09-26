@@ -195,25 +195,42 @@ function ChatPage() {
       const wantsImage = mode === "image" || /^\/image\b/i.test(text);
       if (wantsImage) {
         const prompt = text.replace(/^\/image\s*/i, "").trim() || "a striking abstract artwork";
-        const { data: authData } = await supabase.auth.getSession();
-        const token = authData.session?.access_token;
-        if (!token) throw new Error("Please sign in again to generate an image.");
+        setImagePreview({ url: "", final: false });
 
-        let finalImage = "";
-        setImagePreview(null);
-        await streamImage(
-          "/api/generate-image",
-          { prompt },
-          (url, final) => {
-            setImagePreview({ url, final });
-            if (final) finalImage = url;
-          },
-          { Authorization: `Bearer ${token}` },
-        );
-        if (!finalImage) throw new Error("The final image was not available.");
+        // 1) Free Flux route first
+        let blob: Blob | null = null;
+        try {
+          const seed = Math.floor(Math.random() * 1_000_000);
+          const res = await fetch(
+            `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&model=flux&nologo=true&enhance=true&seed=${seed}`,
+          );
+          const b = await res.blob();
+          if (res.ok && b.type.startsWith("image/") && b.size > 20_000) blob = b;
+        } catch {
+          blob = null;
+        }
 
-        const blob = await fetch(finalImage).then((response) => response.blob());
-        const url = await uploadImage(new File([blob], `Noqva_${crypto.randomUUID()}.png`, { type: "image/png" }));
+        // 2) HD fallback route
+        if (!blob) {
+          const { data: authData } = await supabase.auth.getSession();
+          const token = authData.session?.access_token;
+          if (!token) throw new Error("Please sign in again to generate an image.");
+          let finalImage = "";
+          await streamImage(
+            "/api/generate-image",
+            { prompt },
+            (url, final) => {
+              setImagePreview({ url, final });
+              if (final) finalImage = url;
+            },
+            { Authorization: `Bearer ${token}` },
+          );
+          if (!finalImage) throw new Error("Image generation is busy — please try again.");
+          blob = await fetch(finalImage).then((response) => response.blob());
+        }
+
+        const ext = blob.type.includes("png") ? "png" : "jpg";
+        const url = await uploadImage(new File([blob], `Noqva_${crypto.randomUUID()}.${ext}`, { type: blob.type }));
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
@@ -369,17 +386,21 @@ function ChatPage() {
             ))}
 
             {imagePreview ? (
-              <div className="ml-0 max-w-xl self-start overflow-hidden rounded-xl border border-border bg-card">
-                <img
-                  src={imagePreview.url}
-                  alt="Image generation preview"
-                  className={cn(
-                    "aspect-square w-full object-contain transition-[filter] duration-500",
-                    imagePreview.final ? "blur-0" : "blur-2xl",
-                  )}
-                />
+              <div className="ml-0 w-full max-w-xl self-start overflow-hidden rounded-xl border border-border bg-card">
+                {imagePreview.url ? (
+                  <img
+                    src={imagePreview.url}
+                    alt="Image generation preview"
+                    className={cn(
+                      "aspect-video w-full object-contain transition-[filter] duration-500",
+                      imagePreview.final ? "blur-0" : "blur-2xl",
+                    )}
+                  />
+                ) : (
+                  <div className="aspect-video w-full animate-pulse bg-muted" />
+                )}
                 <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-                  {imagePreview.final ? "Saving full-resolution image…" : "Rendering high-quality image…"}
+                  {imagePreview.final ? "Saving full-resolution image…" : "Rendering HD artwork…"}
                 </p>
               </div>
             ) : null}
