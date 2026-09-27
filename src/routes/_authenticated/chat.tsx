@@ -276,6 +276,7 @@ function ChatPage() {
         const result = await runChat({
           data: { turns: history, mode: mode === "document" ? "document" : "chat" },
         });
+        if (!result.content) throw new Error(result.error ?? "Noqva AI is busy right now — please try again in a moment.");
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
