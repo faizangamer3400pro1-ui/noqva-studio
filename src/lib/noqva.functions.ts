@@ -5,12 +5,13 @@ const GATEWAY = "https://ai.gateway.lovable.dev";
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
-function gatewayMessage(status: number, body: string) {
+function gatewayMessage(status: number, _body?: string) {
   if (status === 429) return "Noqva AI is busy right now — please try again in a moment.";
-  if (status === 402) return "Noqva AI is temporarily unavailable. Please try again later.";
-  if (status === 403) return "This AI model isn't available for this workspace right now.";
-  return `AI request failed (${status}). ${body.slice(0, 200)}`;
+  if (status === 400) return "That request couldn't be processed. Try rephrasing it.";
+  return "Noqva AI is temporarily unavailable. Please try again shortly.";
 }
+
+const CHAT_MODELS = ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"];
 
 /** Streaming-free chat completion used for normal chat + document drafting. */
 export const chatComplete = createServerFn({ method: "POST" })
@@ -18,31 +19,38 @@ export const chatComplete = createServerFn({ method: "POST" })
   .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env["OPENROUTER_API_KEY"];
-    if (!apiKey) throw new Error("AI chat is not configured for this project.");
+    if (!apiKey) throw new Error("Chat is temporarily unavailable. Please try again later.");
 
     const system =
       data.mode === "document"
         ? "You are Noqva AI, a document studio. Produce a complete, well-structured document in clean markdown using headings, short paragraphs and bullet lists. No preamble, no closing chatter — just the document."
         : "You are Noqva AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "X-Title": "Noqva AI",
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [{ role: "system", content: system }, ...data.turns.slice(-20)],
-      }),
-    });
-
-    if (!res.ok) throw new Error(gatewayMessage(res.status, await res.text()));
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = json.choices?.[0]?.message?.content?.trim();
-    if (!content) throw new Error("Noqva AI returned an empty response.");
-    return { content };
+    const messages = [{ role: "system", content: system }, ...data.turns.slice(-20)];
+    for (const model of CHAT_MODELS) {
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "X-Title": "Noqva AI",
+          },
+          body: JSON.stringify({ model, messages }),
+          signal: AbortSignal.timeout(45_000),
+        });
+        if (!res.ok) {
+          console.error("chat model failed", model, res.status, (await res.text()).slice(0, 300));
+          continue;
+        }
+        const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+        const content = json.choices?.[0]?.message?.content?.trim();
+        if (content) return { content };
+      } catch (err) {
+        console.error("chat model error", model, err);
+      }
+    }
+    throw new Error("Noqva AI is busy right now — please try again in a moment.");
   });
 
 /** Creates a 5-second image-to-video job on the AI gateway. */
@@ -51,7 +59,7 @@ export const startVideoJob = createServerFn({ method: "POST" })
   .inputValidator((input: { imageUrl: string; prompt?: string }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("AI is not configured for this project.");
+    if (!apiKey) throw new Error("Video rendering is temporarily unavailable.");
 
     const imageRes = await fetch(data.imageUrl);
     if (!imageRes.ok) throw new Error("Could not load the source image for the video.");
@@ -92,7 +100,7 @@ export const checkVideoJob = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("AI is not configured for this project.");
+    if (!apiKey) throw new Error("Video rendering is temporarily unavailable.");
 
     const res = await fetch(`${GATEWAY}/v1/videos/${data.id}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -125,7 +133,7 @@ export const checkVideoJob = createServerFn({ method: "POST" })
     const { error: uploadError } = await supabaseAdmin.storage
       .from("noqva-videos")
       .upload(path, buffer, { contentType: "video/mp4", upsert: true });
-    if (uploadError && !uploadError.message.includes("exists")) throw new Error(uploadError.message);
+    if (uploadError && !uploadError.message.includes("exists")) throw new Error("Could not save the finished video. Please try again.");
 
     const { data: signed, error: signError } = await supabaseAdmin.storage
       .from("noqva-videos")

@@ -16,7 +16,9 @@ type Props = {
 };
 
 async function downloadFile(url: string, filename: string) {
+  try {
   const res = await fetch(url);
+  if (!res.ok) throw new Error();
   const blob = await res.blob();
   const objectUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -24,6 +26,9 @@ async function downloadFile(url: string, filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(objectUrl);
+  } catch {
+    window.open(url, "_blank", "noopener");
+  }
 }
 
 export function MessageItem({ message, converting, onConvertToVideo }: Props) {
@@ -53,9 +58,22 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
           <video
             src={message.video_url}
             controls
+            autoPlay
+            loop
+            muted
             playsInline
+            preload="metadata"
             className="mt-1 max-h-[420px] w-full rounded-xl border border-border bg-muted"
           />
+        ) : null}
+
+        {converting ? (
+          <div className="mt-1 rounded-xl border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Rendering 5s MP4 motion...</p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className="h-full w-1/3 animate-[noqva-progress_1.6s_ease-in-out_infinite] rounded-full bg-primary" />
+            </div>
+          </div>
         ) : null}
 
         {!isUser || message.image_url || message.video_url ? (
@@ -96,7 +114,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
                 className="h-8 rounded-lg text-xs"
                 onClick={() => downloadFile(message.video_url!, `Noqva_Video_${message.id}.mp4`)}
               >
-                <Download className="size-3.5" /> Download video
+                <Download className="size-3.5" /> Download MP4
               </Button>
             ) : null}
 
