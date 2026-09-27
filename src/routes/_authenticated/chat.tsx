@@ -310,7 +310,7 @@ function ChatPage() {
     if (!message.image_url || !activeId) return;
     setConverting(message.id);
     try {
-      const { id } = await runStartVideo({
+      const started = await runStartVideo({
         data: { imageUrl: message.image_url, prompt: message.content.replace(/[*_`]/g, "") },
       });
       toast.info("Rendering your 5-second clip — this usually takes 1-3 minutes.");

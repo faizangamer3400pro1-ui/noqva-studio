@@ -19,7 +19,7 @@ export const chatComplete = createServerFn({ method: "POST" })
   .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env["OPENROUTER_API_KEY"];
-    if (!apiKey) throw new Error("Chat is temporarily unavailable. Please try again later.");
+    if (!apiKey) return { content: null, error: "Chat is temporarily unavailable. Please try again later." };
 
     const system =
       data.mode === "document"
@@ -45,12 +45,12 @@ export const chatComplete = createServerFn({ method: "POST" })
         }
         const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
         const content = json.choices?.[0]?.message?.content?.trim();
-        if (content) return { content };
+        if (content) return { content, error: null };
       } catch (err) {
         console.error("chat model error", model, err);
       }
     }
-    throw new Error("Noqva AI is busy right now — please try again in a moment.");
+    return { content: null, error: "Noqva AI is busy right now — please try again in a moment." };
   });
 
 /** Creates a 5-second image-to-video job on the AI gateway. */
@@ -62,7 +62,7 @@ export const startVideoJob = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("Video rendering is temporarily unavailable.");
 
     const imageRes = await fetch(data.imageUrl);
-    if (!imageRes.ok) throw new Error("Could not load the source image for the video.");
+    if (!imageRes.ok) return { id: null, error: "Could not load the source image for the video." };
     const mime = imageRes.headers.get("content-type")?.split(";")[0] ?? "image/jpeg";
     const bytes = new Uint8Array(await imageRes.arrayBuffer());
     let binary = "";
@@ -89,9 +89,12 @@ export const startVideoJob = createServerFn({ method: "POST" })
       }),
     });
 
-    if (!res.ok) throw new Error(gatewayMessage(res.status, await res.text()));
+    if (!res.ok) {
+      console.error("video start failed", res.status, (await res.text()).slice(0, 300));
+      return { id: null, error: gatewayMessage(res.status) };
+    }
     const job = (await res.json()) as { id: string };
-    return { id: job.id };
+    return { id: job.id, error: null };
   });
 
 /** Polls a video job; once complete, stores the MP4 and returns a durable signed URL. */
@@ -105,7 +108,10 @@ export const checkVideoJob = createServerFn({ method: "POST" })
     const res = await fetch(`${GATEWAY}/v1/videos/${data.id}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
-    if (!res.ok) throw new Error(gatewayMessage(res.status, await res.text()));
+    if (!res.ok) {
+      console.error("video poll failed", res.status);
+      return { status: "failed" as const, error: gatewayMessage(res.status) };
+    }
     const job = (await res.json()) as {
       status: string;
       progress?: number;
