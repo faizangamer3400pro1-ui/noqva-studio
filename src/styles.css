@@ -137,3 +137,8 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
+
+@keyframes noqva-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}

@@ -51,10 +51,10 @@ function Landing() {
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
-  const signIn = async () => {
+  const signIn = async (provider: "google" | "microsoft" = "google") => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: getAuthRedirectUrl(),
       });
       if (result?.error) throw result.error;
@@ -62,7 +62,7 @@ function Landing() {
       navigate({ to: "/chat" });
     } catch {
       setLoading(false);
-      toast.error("Could not sign in with Google. Please try again.");
+      toast.error("Could not sign you in. Please try again.");
     }
   };
 
@@ -81,15 +81,27 @@ function Landing() {
             One clean workspace for AI chat, unlimited image generation, 5-second video clips and
             downloadable PDF documents.
           </p>
-          <Button
-            size="lg"
-            className="mt-8 h-11 rounded-xl px-6 text-sm font-medium"
-            onClick={signIn}
-            disabled={loading}
-          >
-            <GoogleMark />
-            {loading ? "Opening Google…" : "Continue with Google"}
-          </Button>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button
+              size="lg"
+              className="h-11 rounded-xl px-6 text-sm font-medium"
+              onClick={() => signIn("google")}
+              disabled={loading}
+            >
+              <GoogleMark />
+              Continue with Google
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-11 rounded-xl px-6 text-sm font-medium"
+              onClick={() => signIn("microsoft")}
+              disabled={loading}
+            >
+              <MicrosoftMark />
+              Continue with Microsoft
+            </Button>
+          </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Sign in required — your chats stay private to your account.
           </p>
@@ -132,6 +144,17 @@ function GoogleMark() {
         d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4 5.6l6.2 5.2C37.1 40.2 44 35 44 24c0-1.2-.1-2.3-.4-3.5z"
         transform="scale(0.5)"
       />
+    </svg>
+  );
+}
+
+function MicrosoftMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
+      <path fill="#F25022" d="M2 2h9.5v9.5H2z" />
+      <path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z" />
+      <path fill="#00A4EF" d="M2 12.5h9.5V22H2z" />
+      <path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z" />
     </svg>
   );
 }

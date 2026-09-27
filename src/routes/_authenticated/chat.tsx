@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ImageIcon, FileText, Paperclip, Menu, Sparkle } from "lucide-react";
+import { ImageIcon, FileText, Paperclip, Menu, Sparkle, HelpCircle } from "lucide-react";
+import { WelcomeDialog, TutorialDialog, type QuickStart } from "@/components/noqva/onboarding";
 
 import { supabase } from "@/integrations/supabase/client";
 import { chatComplete, startVideoJob, checkVideoJob } from "@/lib/noqva.functions";
@@ -56,6 +57,12 @@ const SUGGESTIONS = [
   "Summarise the pros and cons of remote work",
 ];
 
+function friendly(error: unknown, fallback: string) {
+  const msg = error instanceof Error ? error.message : "";
+  if (!msg || msg.length > 160 || /(\bat\b .*:\d+|stack|undefined|null|fetch|JSON|status|\{)/i.test(msg)) return fallback;
+  return msg;
+}
+
 function ChatPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -69,6 +76,24 @@ function ChatPage() {
   const [busy, setBusy] = useState(false);
   const [converting, setConverting] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    const key = `noqva-onboarded-${userId}`;
+    if (!localStorage.getItem(key)) {
+      setWelcomeOpen(true);
+      localStorage.setItem(key, "1");
+    }
+  }, [userId]);
+
+  const pickQuickStart = (choice: QuickStart) => {
+    setWelcomeOpen(false);
+    setMode(choice === "chat" ? "chat" : "image");
+    if (choice === "video") toast.info("Describe an image first — then tap “Convert to 5s video” under it.");
+    setTourOpen(true);
+  };
   const [imagePreview, setImagePreview] = useState<{ url: string; final: boolean } | null>(null);
 
   useEffect(() => {
@@ -251,11 +276,12 @@ function ChatPage() {
         const result = await runChat({
           data: { turns: history, mode: mode === "document" ? "document" : "chat" },
         });
+        if (!result.content) throw new Error(result.error ?? "Noqva AI is busy right now — please try again in a moment.");
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
           sender: "assistant",
-          content: result.content,
+          content: result.content ?? "",
         });
       } else if (attachedUrl) {
         await supabase.from("messages").insert({
@@ -275,7 +301,7 @@ function ChatPage() {
       setMode("chat");
     } catch (error) {
       setImagePreview(null);
-      toast.error(error instanceof Error ? error.message : "Something went wrong.");
+      toast.error(friendly(error, "Something went wrong. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -285,9 +311,11 @@ function ChatPage() {
     if (!message.image_url || !activeId) return;
     setConverting(message.id);
     try {
-      const { id } = await runStartVideo({
+      const started = await runStartVideo({
         data: { imageUrl: message.image_url, prompt: message.content.replace(/[*_`]/g, "") },
       });
+      if (!started.id) throw new Error(started.error ?? "Video rendering is temporarily unavailable.");
+      const id = started.id;
       toast.info("Rendering your 5-second clip — this usually takes 1-3 minutes.");
 
       for (let attempt = 0; attempt < 60; attempt++) {
@@ -306,7 +334,7 @@ function ChatPage() {
       }
       throw new Error("The video is taking longer than expected. Please try again.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Video generation failed.");
+      toast.error(friendly(error, "Video rendering failed. Please try again."));
     } finally {
       setConverting(null);
     }
@@ -335,7 +363,8 @@ function ChatPage() {
       <aside className="hidden w-72 shrink-0 border-r border-border md:block">{sidebar}</aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3 md:hidden">
+        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex items-center gap-3 md:hidden">
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Open chats">
@@ -349,7 +378,18 @@ function ChatPage() {
           </Sheet>
           <img src={logo} alt="" width={24} height={24} className="size-6" />
           <span className="text-sm font-semibold">Noqva AI</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto rounded-lg text-xs text-muted-foreground"
+            onClick={() => setTourOpen(true)}
+          >
+            <HelpCircle className="size-4" /> Help / Quick Tour
+          </Button>
         </header>
+        <WelcomeDialog open={welcomeOpen} onOpenChange={setWelcomeOpen} onPick={pickQuickStart} />
+        <TutorialDialog open={tourOpen} onOpenChange={setTourOpen} />
 
         <Conversation className="flex-1">
           <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-6">
@@ -456,7 +496,7 @@ function ChatPage() {
                           });
                           refreshMessages(conversationId);
                         } catch (err) {
-                          toast.error(err instanceof Error ? err.message : "Upload failed.");
+                          toast.error(friendly(err, "Upload failed. Please try again."));
                         } finally {
                           setBusy(false);
                         }
