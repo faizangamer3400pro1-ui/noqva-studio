@@ -320,7 +320,12 @@ function ChatPage() {
 
       for (let attempt = 0; attempt < 60; attempt++) {
         await new Promise((r) => setTimeout(r, 7000));
-        const status = await runCheckVideo({ data: { id } });
+        let status: Awaited<ReturnType<typeof runCheckVideo>>;
+        try {
+          status = await runCheckVideo({ data: { id } });
+        } catch {
+          continue; // temporary hiccup — keep waiting
+        }
         if (status.status === "failed") throw new Error(status.error);
         if (status.status === "completed") {
           await supabase
