@@ -227,7 +227,7 @@ function ChatPage() {
         try {
           const seed = Math.floor(Math.random() * 1_000_000);
           const res = await fetch(
-            `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&model=flux&nologo=true&enhance=true&seed=${seed}`,
+            `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&model=flux&nologo=true&enhance=true&seed=${seed}`,
           );
           const b = await res.blob();
           if (res.ok && b.type.startsWith("image/") && b.size > 20_000) blob = b;
@@ -433,12 +433,12 @@ function ChatPage() {
                     src={imagePreview.url}
                     alt="Image generation preview"
                     className={cn(
-                      "aspect-video w-full object-contain transition-[filter] duration-500",
+                      "aspect-[9/16] max-h-[640px] w-full object-contain transition-[filter] duration-500",
                       imagePreview.final ? "blur-0" : "blur-2xl",
                     )}
                   />
                 ) : (
-                  <div className="aspect-video w-full animate-pulse bg-muted" />
+                  <div className="aspect-[9/16] max-h-[640px] w-full animate-pulse bg-muted" />
                 )}
                 <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
                   {imagePreview.final ? "Saving full-resolution image…" : "Rendering HD artwork…"}

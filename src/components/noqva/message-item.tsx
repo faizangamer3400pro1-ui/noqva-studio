@@ -49,7 +49,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
               src={message.image_url}
               alt={message.content || "Generated image"}
               loading="lazy"
-              className="max-h-[420px] w-full bg-muted object-contain"
+              className="max-h-[640px] w-full bg-muted object-contain"
             />
           </figure>
         ) : null}

@@ -38,7 +38,7 @@ export function generateImage(apiKey: string, prompt: string, stream = true) {
     body: JSON.stringify({
       model: IMAGE_MODEL,
       prompt: refinedPrompt,
-      size: "1536x1536",
+      size: "1024x1536",
       quality: "max",
       ...(stream ? { stream: true, partial_images: 1 } : {}),
     }),
