@@ -280,7 +280,7 @@ function ChatPage() {
           conversation_id: conversationId,
           user_id: userId,
           sender: "assistant",
-          content: result.content,
+          content: result.content ?? "",
         });
       } else if (attachedUrl) {
         await supabase.from("messages").insert({
@@ -313,6 +313,8 @@ function ChatPage() {
       const started = await runStartVideo({
         data: { imageUrl: message.image_url, prompt: message.content.replace(/[*_`]/g, "") },
       });
+      if (!started.id) throw new Error(started.error ?? "Video rendering is temporarily unavailable.");
+      const id = started.id;
       toast.info("Rendering your 5-second clip — this usually takes 1-3 minutes.");
 
       for (let attempt = 0; attempt < 60; attempt++) {
