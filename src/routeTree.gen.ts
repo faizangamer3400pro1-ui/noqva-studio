@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 
@@ -21,6 +22,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
@@ -36,11 +42,13 @@ const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/chat': typeof AuthenticatedChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/chat': typeof AuthenticatedChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
@@ -48,18 +56,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat' | '/api/generate-image'
+  fullPaths: '/' | '/reset-password' | '/chat' | '/api/generate-image'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat' | '/api/generate-image'
+  to: '/' | '/reset-password' | '/chat' | '/api/generate-image'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/reset-password'
     | '/_authenticated/chat'
     | '/api/generate-image'
   fileRoutesById: FileRoutesById
@@ -67,6 +77,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
 }
 
@@ -84,6 +95,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/chat': {
@@ -117,6 +135,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
 }
 export const routeTree = rootRouteImport

@@ -6,9 +6,9 @@ const GATEWAY = "https://ai.gateway.lovable.dev";
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
 function gatewayMessage(status: number, _body?: string) {
-  if (status === 429) return "Noqva AI is busy right now — please try again in a moment.";
+  if (status === 429) return "Clamp AI is busy right now — please try again in a moment.";
   if (status === 400) return "That request couldn't be processed. Try rephrasing it.";
-  return "Noqva AI is temporarily unavailable. Please try again shortly.";
+  return "Clamp AI is temporarily unavailable. Please try again shortly.";
 }
 
 const CHAT_MODELS = ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"];
@@ -16,15 +16,17 @@ const CHAT_MODELS = ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"
 /** Streaming-free chat completion used for normal chat + document drafting. */
 export const chatComplete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" }) => input)
+  .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" | "presentation" }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env["OPENROUTER_API_KEY"];
     if (!apiKey) return { content: null, error: "Chat is temporarily unavailable. Please try again later." };
 
     const system =
       data.mode === "document"
-        ? "You are Noqva AI, a document studio. Produce a complete, well-structured document in clean markdown using headings, short paragraphs and bullet lists. No preamble, no closing chatter — just the document."
-        : "You are Noqva AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
+        ? "You are Clamp AI, a document studio. Produce a complete, well-structured document in clean markdown using headings, short paragraphs and bullet lists. No preamble, no closing chatter — just the document."
+        : data.mode === "presentation"
+          ? 'You are Clamp AI, a presentation studio. Write one short intro sentence, then output a single fenced code block with language tag `presentation` containing valid JSON: {"title": string, "theme": "dark_minimal"|"executive_navy"|"modern_slate", "slides": [{"slideNumber": number, "title": string, "layout": "title"|"bullets"|"cards"|"metrics", "subtitle"?: string, "bullets"?: string[], "cards"?: [{"title": string, "text": string}], "metrics"?: [{"value": string, "label": string}]}]}. Make 6-10 slides, max 4 bullets of under 14 words each, max 3 cards or metrics. Never invent statistics; use qualitative points if unsure. No text after the code block.'
+          : "You are Clamp AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
 
     const messages = [{ role: "system", content: system }, ...data.turns.slice(-20)];
     for (const model of CHAT_MODELS) {
@@ -34,7 +36,7 @@ export const chatComplete = createServerFn({ method: "POST" })
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "X-Title": "Noqva AI",
+            "X-Title": "Clamp AI",
           },
           body: JSON.stringify({ model, messages }),
           signal: AbortSignal.timeout(45_000),
@@ -50,7 +52,7 @@ export const chatComplete = createServerFn({ method: "POST" })
         console.error("chat model error", model, err);
       }
     }
-    return { content: null, error: "Noqva AI is busy right now — please try again in a moment." };
+    return { content: null, error: "Clamp AI is busy right now — please try again in a moment." };
   });
 
 /** Creates a 5-second image-to-video job on the AI gateway. */

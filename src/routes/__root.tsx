@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Noqva AI — Chat, Images, Video & Documents" },
+      { title: "Clamp AI — Chat, Images, Video & Documents" },
       {
         name: "description",
         content:
-          "Noqva AI is an all-in-one AI studio: chat, unlimited image generation, 5-second video clips and instant PDF documents.",
+          "Clamp AI is an all-in-one AI studio: chat, unlimited image generation, 5-second video clips and instant PDF documents.",
       },
-      { name: "author", content: "Noqva AI" },
-      { property: "og:title", content: "Noqva AI — Chat, Images, Video & Documents" },
+      { name: "author", content: "Clamp AI" },
+      { property: "og:title", content: "Clamp AI — Chat, Images, Video & Documents" },
       {
         property: "og:description",
         content:

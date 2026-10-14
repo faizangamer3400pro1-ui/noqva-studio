@@ -7,18 +7,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { getAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import logo from "@/assets/noqva-logo.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Noqva AI — Sign in to your AI studio" },
+      { title: "Clamp AI — Sign in to your AI studio" },
       {
         name: "description",
         content:
-          "Sign in with Google to chat with Noqva AI, generate unlimited images, create 5-second videos and export PDF documents.",
+          "Sign in with Google to chat with Clamp AI, generate unlimited images, create 5-second videos and export PDF documents.",
       },
-      { property: "og:title", content: "Noqva AI — Sign in to your AI studio" },
+      { property: "og:title", content: "Clamp AI — Sign in to your AI studio" },
       {
         property: "og:description",
         content: "One workspace for AI chat, image generation, short video clips and documents.",
@@ -73,9 +74,9 @@ function Landing() {
 
       <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center gap-10 px-6 py-16">
         <div className="flex flex-col items-center text-center">
-          <img src={logo} alt="Noqva AI" width={64} height={64} className="size-16" />
+          <img src={logo} alt="Clamp AI" width={64} height={64} className="size-16" />
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Noqva AI
+            Clamp AI
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground">
             One clean workspace for AI chat, unlimited image generation, 5-second video clips and
@@ -102,6 +103,7 @@ function Landing() {
               Continue with Microsoft
             </Button>
           </div>
+          <EmailAuth />
           <p className="mt-3 text-xs text-muted-foreground">
             Sign in required — your chats stay private to your account.
           </p>
@@ -118,6 +120,72 @@ function Landing() {
         </div>
       </div>
     </main>
+  );
+}
+
+function EmailAuth() {
+  const [tab, setTab] = useState<"in" | "up">("in");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (tab === "up") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        toast.success("Check your email to confirm your account.");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not sign you in.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const forgot = async () => {
+    if (!email) return toast.info("Enter your email first.");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Password reset link sent.");
+  };
+
+  return (
+    <form onSubmit={submit} className="noqva-panel mt-6 w-full max-w-sm space-y-3 p-4 text-left">
+      <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-xs">
+        {(["in", "up"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`rounded-md py-1.5 ${tab === t ? "bg-card text-foreground" : "text-muted-foreground"}`}
+          >
+            {t === "in" ? "Sign in" : "Create account"}
+          </button>
+        ))}
+      </div>
+      <Input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Input type="password" required minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <Button type="submit" className="w-full rounded-xl" disabled={busy}>
+        {tab === "in" ? "Sign in with email" : "Create account"}
+      </Button>
+      {tab === "in" ? (
+        <button type="button" onClick={forgot} className="text-xs text-muted-foreground hover:text-foreground">
+          Forgot password?
+        </button>
+      ) : null}
+    </form>
   );
 }
 

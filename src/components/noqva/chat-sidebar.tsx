@@ -31,7 +31,7 @@ export function ChatSidebar({
       <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-4">
         <img src={logo} alt="" width={28} height={28} className="size-7" />
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-sidebar-foreground">Noqva AI</p>
+          <p className="text-sm font-semibold text-sidebar-foreground">Clamp AI</p>
           <p className="text-[11px] text-muted-foreground">Chat · Image · Video · PDF</p>
         </div>
       </div>
