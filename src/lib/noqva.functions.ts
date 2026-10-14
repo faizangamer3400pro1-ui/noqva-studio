@@ -16,7 +16,7 @@ const CHAT_MODELS = ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"
 /** Streaming-free chat completion used for normal chat + document drafting. */
 export const chatComplete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" }) => input)
+  .inputValidator((input: { turns: ChatTurn[]; mode?: "chat" | "document" | "presentation" }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env["OPENROUTER_API_KEY"];
     if (!apiKey) return { content: null, error: "Chat is temporarily unavailable. Please try again later." };
@@ -24,7 +24,9 @@ export const chatComplete = createServerFn({ method: "POST" })
     const system =
       data.mode === "document"
         ? "You are Clamp AI, a document studio. Produce a complete, well-structured document in clean markdown using headings, short paragraphs and bullet lists. No preamble, no closing chatter — just the document."
-        : "You are Clamp AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
+        : data.mode === "presentation"
+          ? 'You are Clamp AI, a presentation studio. Write one short intro sentence, then output a single fenced code block with language tag `presentation` containing valid JSON: {"title": string, "theme": "dark_minimal"|"executive_navy"|"modern_slate", "slides": [{"slideNumber": number, "title": string, "layout": "title"|"bullets"|"cards"|"metrics", "subtitle"?: string, "bullets"?: string[], "cards"?: [{"title": string, "text": string}], "metrics"?: [{"value": string, "label": string}]}]}. Make 6-10 slides, max 4 bullets of under 14 words each, max 3 cards or metrics. Never invent statistics; use qualitative points if unsure. No text after the code block.'
+          : "You are Clamp AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
 
     const messages = [{ role: "system", content: system }, ...data.turns.slice(-20)];
     for (const model of CHAT_MODELS) {
