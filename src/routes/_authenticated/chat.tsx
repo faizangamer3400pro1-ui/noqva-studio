@@ -3,8 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ImageIcon, FileText, Paperclip, Menu, Sparkle, HelpCircle } from "lucide-react";
-import { WelcomeDialog, TutorialDialog, type QuickStart } from "@/components/noqva/onboarding";
+import { ImageIcon, FileText, Paperclip, Menu, Sparkle, HelpCircle, Presentation } from "lucide-react";
+import { WelcomeDialog, TutorialDialog, ONBOARDING_KEY, type QuickStart } from "@/components/noqva/onboarding";
 
 import { supabase } from "@/integrations/supabase/client";
 import { chatComplete, startVideoJob, checkVideoJob } from "@/lib/noqva.functions";
@@ -49,7 +49,13 @@ export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
 });
 
-type Mode = "chat" | "image" | "document";
+type Mode = "chat" | "image" | "document" | "slides";
+type Ratio = "16:9" | "9:16" | "1:1";
+const RATIOS: Record<Ratio, { w: number; h: number; cls: string }> = {
+  "16:9": { w: 1280, h: 720, cls: "aspect-video" },
+  "9:16": { w: 720, h: 1280, cls: "aspect-[9/16]" },
+  "1:1": { w: 1024, h: 1024, cls: "aspect-square" },
+};
 
 const SUGGESTIONS = [
   "/image a futuristic city at dusk, cinematic",
@@ -78,14 +84,11 @@ function ChatPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [ratio, setRatio] = useState<Ratio>("16:9");
 
   useEffect(() => {
     if (!userId) return;
-    const key = `noqva-onboarded-${userId}`;
-    if (!localStorage.getItem(key)) {
-      setWelcomeOpen(true);
-      localStorage.setItem(key, "1");
-    }
+    if (!localStorage.getItem(ONBOARDING_KEY)) setWelcomeOpen(true);
   }, [userId]);
 
   const pickQuickStart = (choice: QuickStart) => {
@@ -225,9 +228,11 @@ function ChatPage() {
         // 1) Free Flux route first
         let blob: Blob | null = null;
         try {
-          const seed = Math.floor(Math.random() * 1_000_000);
+          const seed = Math.floor(Math.random() * 899999 + 100000);
+          const { w, h } = RATIOS[ratio];
+          const enhanced = `${prompt}, cinematic lighting, photorealistic textures, 8k resolution, sharp focus, masterpiece, highly detailed`;
           const res = await fetch(
-            `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1920&model=flux&nologo=true&enhance=true&seed=${seed}`,
+            `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${seed}`,
           );
           const b = await res.blob();
           if (res.ok && b.type.startsWith("image/") && b.size > 20_000) blob = b;
@@ -274,7 +279,15 @@ function ChatPage() {
             content: m.content,
           }));
         const result = await runChat({
-          data: { turns: history, mode: mode === "document" ? "document" : "chat" },
+          data: {
+            turns: history,
+            mode:
+              mode === "document"
+                ? "document"
+                : mode === "slides" || /\b(presentation|pitch deck|slideshow|slide deck|powerpoint|pptx)\b/i.test(text)
+                  ? "presentation"
+                  : "chat",
+          },
         });
         if (!result.content) throw new Error(result.error ?? "Clamp AI is busy right now — please try again in a moment.");
         await supabase.from("messages").insert({
@@ -438,12 +451,13 @@ function ChatPage() {
                     src={imagePreview.url}
                     alt="Image generation preview"
                     className={cn(
-                      "aspect-[9/16] max-h-[640px] w-full object-contain transition-[filter] duration-500",
+                      "max-h-[640px] w-full object-contain transition-[filter] duration-500",
+                      RATIOS[ratio].cls,
                       imagePreview.final ? "blur-0" : "blur-2xl",
                     )}
                   />
                 ) : (
-                  <div className="aspect-[9/16] max-h-[640px] w-full animate-pulse bg-muted" />
+                  <div className={cn("mx-auto max-h-[640px] w-full animate-pulse bg-muted", RATIOS[ratio].cls)} />
                 )}
                 <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
                   {imagePreview.final ? "Saving full-resolution image…" : "Rendering HD artwork…"}
@@ -527,12 +541,37 @@ function ChatPage() {
                     <FileText className="size-4" />
                     <span className="hidden sm:inline">Document</span>
                   </PromptInputButton>
+                  <PromptInputButton
+                    aria-label="PowerPoint presentation mode"
+                    className={cn(mode === "slides" && "bg-primary text-primary-foreground")}
+                    onClick={() => setMode(mode === "slides" ? "chat" : "slides")}
+                  >
+                    <Presentation className="size-4" />
+                    <span className="hidden sm:inline">Slides</span>
+                  </PromptInputButton>
+                  {mode === "image" ? (
+                    <div className="ml-1 flex rounded-lg border border-border p-0.5">
+                      {(Object.keys(RATIOS) as Ratio[]).map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setRatio(r)}
+                          className={cn(
+                            "rounded-md px-2 py-1 text-[11px]",
+                            ratio === r ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
                   {mode !== "chat" ? (
-                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <span className="hidden items-center gap-1 text-[11px] text-muted-foreground sm:flex">
                       <Sparkle className="size-3" />
-                      {mode === "image" ? "Image mode" : "Document mode"}
+                      {mode === "image" ? "Image mode" : mode === "slides" ? "Slides mode" : "Document mode"}
                     </span>
                   ) : null}
                   <PromptInputSubmit status={busy ? "submitted" : "ready"} disabled={busy} />
