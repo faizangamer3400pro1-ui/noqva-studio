@@ -84,7 +84,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
                   variant="secondary"
                   size="sm"
                   className="h-8 rounded-lg text-xs"
-                  onClick={() => downloadFile(message.image_url!, `Noqva_Image_${message.id}.png`)}
+                  onClick={() => downloadFile(message.image_url!, `Clamp_Image_${message.id}.png`)}
                 >
                   <Download className="size-3.5" /> Download image
                 </Button>
@@ -112,7 +112,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
                 variant="secondary"
                 size="sm"
                 className="h-8 rounded-lg text-xs"
-                onClick={() => downloadFile(message.video_url!, `Noqva_Video_${message.id}.mp4`)}
+                onClick={() => downloadFile(message.video_url!, `Clamp_Video_${message.id}.mp4`)}
               >
                 <Download className="size-3.5" /> Download MP4
               </Button>

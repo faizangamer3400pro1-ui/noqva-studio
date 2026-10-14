@@ -33,13 +33,13 @@ import logo from "@/assets/noqva-logo.png";
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
     meta: [
-      { title: "Noqva AI Studio — Chat, images, video and PDFs" },
+      { title: "Clamp AI Studio — Chat, images, video and PDFs" },
       {
         name: "description",
         content:
-          "Your Noqva AI workspace: chat with AI, generate images, render 5-second videos and export documents as PDF.",
+          "Your Clamp AI workspace: chat with AI, generate images, render 5-second videos and export documents as PDF.",
       },
-      { property: "og:title", content: "Noqva AI Studio" },
+      { property: "og:title", content: "Clamp AI Studio" },
       {
         property: "og:description",
         content: "Chat, generate images, render short videos and export PDFs in one place.",
@@ -256,7 +256,7 @@ function ChatPage() {
 
         const imageBlob: Blob = blob!;
         const ext = imageBlob.type.includes("png") ? "png" : "jpg";
-        const url = await uploadImage(new File([imageBlob], `Noqva_${crypto.randomUUID()}.${ext}`, { type: imageBlob.type }));
+        const url = await uploadImage(new File([imageBlob], `Clamp_${crypto.randomUUID()}.${ext}`, { type: imageBlob.type }));
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
@@ -276,7 +276,7 @@ function ChatPage() {
         const result = await runChat({
           data: { turns: history, mode: mode === "document" ? "document" : "chat" },
         });
-        if (!result.content) throw new Error(result.error ?? "Noqva AI is busy right now — please try again in a moment.");
+        if (!result.content) throw new Error(result.error ?? "Clamp AI is busy right now — please try again in a moment.");
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           user_id: userId,
@@ -382,7 +382,7 @@ function ChatPage() {
             </SheetContent>
           </Sheet>
           <img src={logo} alt="" width={24} height={24} className="size-6" />
-          <span className="text-sm font-semibold">Noqva AI</span>
+          <span className="text-sm font-semibold">Clamp AI</span>
           </div>
           <Button
             variant="ghost"
@@ -451,7 +451,7 @@ function ChatPage() {
               </div>
             ) : null}
 
-            {busy && !imagePreview ? <Shimmer className="text-sm">Noqva AI is thinking…</Shimmer> : null}
+            {busy && !imagePreview ? <Shimmer className="text-sm">Clamp AI is thinking…</Shimmer> : null}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
@@ -464,7 +464,7 @@ function ChatPage() {
               className="rounded-xl border-border bg-card"
             >
               <PromptInputTextarea
-                placeholder="Ask Noqva AI, generate an image, create a 5s video, or make a PDF document..."
+                placeholder="Ask Clamp AI, generate an image, create a 5s video, or make a PDF document..."
                 disabled={busy}
               />
               <PromptInputFooter className="justify-between">

@@ -12,13 +12,13 @@ import logo from "@/assets/noqva-logo.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Noqva AI — Sign in to your AI studio" },
+      { title: "Clamp AI — Sign in to your AI studio" },
       {
         name: "description",
         content:
-          "Sign in with Google to chat with Noqva AI, generate unlimited images, create 5-second videos and export PDF documents.",
+          "Sign in with Google to chat with Clamp AI, generate unlimited images, create 5-second videos and export PDF documents.",
       },
-      { property: "og:title", content: "Noqva AI — Sign in to your AI studio" },
+      { property: "og:title", content: "Clamp AI — Sign in to your AI studio" },
       {
         property: "og:description",
         content: "One workspace for AI chat, image generation, short video clips and documents.",
@@ -73,9 +73,9 @@ function Landing() {
 
       <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center gap-10 px-6 py-16">
         <div className="flex flex-col items-center text-center">
-          <img src={logo} alt="Noqva AI" width={64} height={64} className="size-16" />
+          <img src={logo} alt="Clamp AI" width={64} height={64} className="size-16" />
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Noqva AI
+            Clamp AI
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground">
             One clean workspace for AI chat, unlimited image generation, 5-second video clips and

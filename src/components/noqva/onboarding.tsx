@@ -55,7 +55,7 @@ export function TutorialDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl border-border bg-card sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl">How Noqva AI works</DialogTitle>
+          <DialogTitle className="text-xl">How Clamp AI works</DialogTitle>
           <DialogDescription>Three steps from idea to download.</DialogDescription>
         </DialogHeader>
         <ol className="grid gap-3">
