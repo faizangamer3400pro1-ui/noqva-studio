@@ -9,7 +9,7 @@ import { downloadDeckPptx, type Deck } from "@/lib/deck";
 export function DeckViewer({ deck }: { deck: Deck }) {
   const [i, setI] = useState(0);
   const [saving, setSaving] = useState(false);
-  const s = deck.slides[i];
+  const s = deck.slides[i] ?? deck.slides[0]!;
   const n = deck.slides.length;
 
   const download = async () => {

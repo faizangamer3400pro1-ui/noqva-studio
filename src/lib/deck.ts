@@ -16,7 +16,7 @@ export function extractDeck(content: string): { deck: Deck | null; rest: string 
   const m = content.match(FENCE);
   if (!m) return { deck: null, rest: content };
   try {
-    const deck = JSON.parse(m[1]) as Deck;
+    const deck = JSON.parse(m[1] ?? "") as Deck;
     if (!deck?.slides?.length) return { deck: null, rest: content };
     return { deck, rest: content.replace(FENCE, "").trim() };
   } catch {
@@ -32,7 +32,7 @@ const THEMES: Record<string, { bg: string; fg: string; muted: string; accent: st
 
 export async function downloadDeckPptx(deck: Deck) {
   const { default: PptxGenJS } = await import("pptxgenjs");
-  const t = THEMES[deck.theme ?? ""] ?? THEMES.dark_minimal;
+  const t = THEMES[deck.theme ?? ""] ?? THEMES["dark_minimal"]!;
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5in
   pptx.title = deck.title;
