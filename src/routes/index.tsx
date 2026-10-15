@@ -153,7 +153,7 @@ function EmailAuth() {
   };
 
   const forgot = async () => {
-    if (!email) return toast.info("Enter your email first.");
+    if (!email) { toast.info("Enter your email first."); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });

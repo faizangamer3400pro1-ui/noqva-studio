@@ -94,7 +94,7 @@ function ChatPage() {
   const pickQuickStart = (choice: QuickStart) => {
     setWelcomeOpen(false);
     setMode(choice === "chat" ? "chat" : "image");
-    if (choice === "video") toast.info("Describe an image first — then tap “Convert to 5s video” under it.");
+    if (choice === "video") toast.info("Describe an image first — then tap “Animate to Video” under it.");
     setTourOpen(true);
   };
   const [imagePreview, setImagePreview] = useState<{ url: string; final: boolean } | null>(null);

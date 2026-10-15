@@ -6,6 +6,10 @@ import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
 import { exportMarkdownToPdf } from "@/lib/pdf";
 import type { Tables } from "@/integrations/supabase/types";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DeckViewer } from "@/components/noqva/deck-viewer";
+import { extractDeck } from "@/lib/deck";
 
 export type ChatMessage = Tables<"messages">;
 
@@ -33,18 +37,21 @@ async function downloadFile(url: string, filename: string) {
 
 export function MessageItem({ message, converting, onConvertToVideo }: Props) {
   const isUser = message.sender === "user";
+  const [zoom, setZoom] = useState(false);
+  const { deck, rest } = extractDeck(message.content ?? "");
 
   return (
     <Message from={isUser ? "user" : "assistant"}>
       <MessageContent>
-        {message.content ? (
+        {rest ? (
           <div className="prose-noqva space-y-3 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_strong]:font-semibold [&_table]:w-full">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{rest}</ReactMarkdown>
           </div>
         ) : null}
+        {deck ? <DeckViewer deck={deck} /> : null}
 
         {message.image_url ? (
-          <figure className="mt-1 overflow-hidden rounded-xl border border-border">
+          <figure className="mt-1 cursor-zoom-in overflow-hidden rounded-2xl border border-border shadow-lg" onClick={() => setZoom(true)}>
             <img
               src={message.image_url}
               alt={message.content || "Generated image"}
@@ -52,6 +59,14 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
               className="max-h-[640px] w-full bg-muted object-contain"
             />
           </figure>
+        ) : null}
+        {message.image_url ? (
+          <Dialog open={zoom} onOpenChange={setZoom}>
+            <DialogContent className="max-w-5xl border-border bg-background p-2">
+              <DialogTitle className="sr-only">Image preview</DialogTitle>
+              <img src={message.image_url} alt="" className="max-h-[85vh] w-full rounded-xl object-contain" />
+            </DialogContent>
+          </Dialog>
         ) : null}
 
         {message.video_url ? (
@@ -86,7 +101,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
                   className="h-8 rounded-lg text-xs"
                   onClick={() => downloadFile(message.image_url!, `Clamp_Image_${message.id}.png`)}
                 >
-                  <Download className="size-3.5" /> Download image
+                  <Download className="size-3.5" /> Download Image (.png)
                 </Button>
                 {!message.video_url ? (
                   <Button
@@ -101,7 +116,7 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
                     ) : (
                       <Clapperboard className="size-3.5" />
                     )}
-                    {converting ? "Rendering video…" : "Convert to 5s video"}
+                    {converting ? "Rendering video…" : "Animate to Video"}
                   </Button>
                 ) : null}
               </>

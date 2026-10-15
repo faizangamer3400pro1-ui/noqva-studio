@@ -44,7 +44,7 @@ export function WelcomeDialog({
 
   const finish = (skip: boolean) => {
     localStorage.setItem(ONBOARDING_KEY, JSON.stringify({ completed: true, skipped: skip, answers }));
-    const media = answers.mode === "Visual Media Canvas" || answers.use?.startsWith("High-Definition");
+    const media = answers["mode"] === "Visual Media Canvas" || answers["use"]?.startsWith("High-Definition");
     onPick(media ? "image" : "chat");
   };
 
@@ -97,7 +97,7 @@ const TOUR = [
 
 export function TutorialDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [step, setStep] = useState(0);
-  const s = TOUR[step];
+  const s = TOUR[step] ?? TOUR[0]!;
   const last = step === TOUR.length - 1;
   const close = (v: boolean) => {
     onOpenChange(v);
