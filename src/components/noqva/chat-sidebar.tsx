@@ -1,4 +1,5 @@
-import { Plus, LogOut, MessageSquare, Trash2 } from "lucide-react";
+import { Plus, LogOut, MessageSquare, Trash2, Pencil, Crown } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +15,8 @@ type Props = {
   onNewChat: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
+  onPlans: () => void;
   onSignOut: () => void;
 };
 
@@ -24,8 +27,17 @@ export function ChatSidebar({
   onNewChat,
   onSelect,
   onDelete,
+  onRename,
+  onPlans,
   onSignOut,
 }: Props) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const save = (id: string) => {
+    const t = draft.trim();
+    if (t) onRename(id, t.slice(0, 80));
+    setEditing(null);
+  };
   return (
     <div className="flex h-full flex-col bg-sidebar">
       <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-4">
@@ -57,17 +69,43 @@ export function ChatSidebar({
                   : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
               )}
             >
+              {editing === c.id ? (
+                <input
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => save(c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") save(c.id);
+                    if (e.key === "Escape") setEditing(null);
+                  }}
+                  className="min-w-0 flex-1 rounded border border-border bg-background px-1.5 py-0.5 text-sm text-foreground outline-none"
+                />
+              ) : (
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  onClick={() => onSelect(c.id)}
+                >
+                  <MessageSquare className="size-3.5 shrink-0" />
+                  <span className="truncate">{c.title}</span>
+                </button>
+              )}
               <button
-                className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                onClick={() => onSelect(c.id)}
+                aria-label="Rename conversation"
+                className="opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                onClick={() => {
+                  setDraft(c.title);
+                  setEditing(c.id);
+                }}
               >
-                <MessageSquare className="size-3.5 shrink-0" />
-                <span className="truncate">{c.title}</span>
+                <Pencil className="size-3.5" />
               </button>
               <button
                 aria-label="Delete conversation"
                 className="opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                onClick={() => onDelete(c.id)}
+                onClick={() => {
+                  if (window.confirm(`Delete "${c.title}"? This can't be undone.`)) onDelete(c.id);
+                }}
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -77,6 +115,9 @@ export function ChatSidebar({
       </ScrollArea>
 
       <div className="border-t border-sidebar-border p-3">
+        <Button variant="secondary" className="mb-2 w-full justify-start rounded-xl" onClick={onPlans}>
+          <Crown className="size-4" /> Plans & Billing
+        </Button>
         <div className="flex items-center gap-2.5 rounded-xl border border-sidebar-border bg-card p-2.5">
           <Avatar className="size-8">
             <AvatarImage src={profile?.avatar_url ?? undefined} alt="" />

@@ -8,6 +8,8 @@ import { WelcomeDialog, TutorialDialog, ONBOARDING_KEY, type QuickStart } from "
 
 import { supabase } from "@/integrations/supabase/client";
 import { chatComplete, startVideoJob, checkVideoJob } from "@/lib/noqva.functions";
+import { VoiceButton } from "@/components/noqva/voice-button";
+import { PlansDialog } from "@/components/noqva/plans-dialog";
 import { ChatSidebar } from "@/components/noqva/chat-sidebar";
 import { MessageItem, type ChatMessage } from "@/components/noqva/message-item";
 import {
@@ -173,6 +175,13 @@ function ChatPage() {
     if (activeId === id) setActiveId(null);
     queryClient.invalidateQueries({ queryKey: ["conversations", userId] });
   };
+
+  const renameConversation = async (id: string, title: string) => {
+    const { error } = await supabase.from("conversations").update({ title }).eq("id", id);
+    if (error) toast.error("Could not rename that conversation.");
+    queryClient.invalidateQueries({ queryKey: ["conversations", userId] });
+  };
+  const [plansOpen, setPlansOpen] = useState(false);
 
   const uploadImage = async (file: File) => {
     const path = `${userId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
@@ -372,6 +381,8 @@ function ChatPage() {
         setSheetOpen(false);
       }}
       onDelete={deleteConversation}
+      onRename={renameConversation}
+      onPlans={() => { setPlansOpen(true); setSheetOpen(false); }}
       onSignOut={signOut}
     />
   );
@@ -408,6 +419,7 @@ function ChatPage() {
         </header>
         <WelcomeDialog open={welcomeOpen} onOpenChange={setWelcomeOpen} onPick={pickQuickStart} />
         <TutorialDialog open={tourOpen} onOpenChange={setTourOpen} />
+        <PlansDialog open={plansOpen} onOpenChange={setPlansOpen} />
 
         <Conversation className="flex-1">
           <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-6">
@@ -483,6 +495,7 @@ function ChatPage() {
               />
               <PromptInputFooter className="justify-between">
                 <div className="flex items-center gap-1.5">
+                  <VoiceButton />
                   <PromptInputButton
                     aria-label="Attach image"
                     onClick={() => {

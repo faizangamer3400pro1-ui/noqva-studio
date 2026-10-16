@@ -26,7 +26,7 @@ export const chatComplete = createServerFn({ method: "POST" })
         ? "You are Clamp AI, a document studio. Produce a complete, well-structured document in clean markdown using headings, short paragraphs and bullet lists. No preamble, no closing chatter — just the document."
         : data.mode === "presentation"
           ? 'You are Clamp AI, a presentation studio. Write one short intro sentence, then output a single fenced code block with language tag `presentation` containing valid JSON: {"title": string, "theme": "dark_minimal"|"executive_navy"|"modern_slate", "slides": [{"slideNumber": number, "title": string, "layout": "title"|"bullets"|"cards"|"metrics", "subtitle"?: string, "bullets"?: string[], "cards"?: [{"title": string, "text": string}], "metrics"?: [{"value": string, "label": string}]}]}. Make 6-10 slides, max 4 bullets of under 14 words each, max 3 cards or metrics. Never invent statistics; use qualitative points if unsure. No text after the code block.'
-          : "You are Clamp AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested.";
+          : "You are Clamp AI, a concise, helpful multimodal assistant. Answer in clean markdown. Keep answers tight unless depth is requested. For stories or video scripts, write scene by scene with camera cues and dialogue. For study topics, give clear study guides and, when a visual helps, a ```mermaid diagram. For code, use any requested language in fenced blocks with the language tag.";
 
     const messages = [{ role: "system", content: system }, ...data.turns.slice(-20)];
     for (const model of CHAT_MODELS) {
