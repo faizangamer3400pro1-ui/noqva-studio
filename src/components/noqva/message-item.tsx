@@ -10,6 +10,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DeckViewer } from "@/components/noqva/deck-viewer";
 import { extractDeck } from "@/lib/deck";
+import { CodeBlock, DiagramBlock, textOf } from "@/components/noqva/rich-blocks";
+import type React from "react";
 
 export type ChatMessage = Tables<"messages">;
 
@@ -45,7 +47,22 @@ export function MessageItem({ message, converting, onConvertToVideo }: Props) {
       <MessageContent>
         {rest ? (
           <div className="prose-noqva space-y-3 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_strong]:font-semibold [&_table]:w-full">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{rest}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                pre: ({ children }) => {
+                  const child = (Array.isArray(children) ? children[0] : children) as
+                    | { props?: { className?: string; children?: React.ReactNode } }
+                    | undefined;
+                  const lang = /language-([\w-]+)/.exec(child?.props?.className ?? "")?.[1] ?? "";
+                  const code = textOf(child?.props?.children ?? children);
+                  if (lang === "mermaid") return <DiagramBlock source={code} notes={rest} />;
+                  return <CodeBlock language={lang} code={code} />;
+                },
+              }}
+            >
+              {rest}
+            </ReactMarkdown>
           </div>
         ) : null}
         {deck ? <DeckViewer deck={deck} /> : null}
