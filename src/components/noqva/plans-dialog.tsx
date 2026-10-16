@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 export const PLANS = [
   { id: "free", name: "Free", price: "$0", period: "forever", features: ["Chat, images, PDFs & slides", "Standard speed"], url: "" },
-  { id: "monthly", name: "Pro Monthly", price: "$1", period: "per month", features: ["Everything in Free", "Priority rendering", "HD video clips"], url: import.meta.env.VITE_LEMON_SQUEEZY_MONTHLY_URL as string | undefined },
-  { id: "yearly", name: "Pro Yearly", price: "$15", period: "per year", features: ["Everything in Pro", "Best value"], url: import.meta.env.VITE_LEMON_SQUEEZY_YEARLY_URL as string | undefined, highlight: true },
+  { id: "monthly", name: "Pro Monthly", price: "$1", period: "per month", features: ["Everything in Free", "Priority rendering", "HD video clips"], url: import.meta.env['VITE_LEMON_SQUEEZY_MONTHLY_URL'] as string | undefined },
+  { id: "yearly", name: "Pro Yearly", price: "$15", period: "per year", features: ["Everything in Pro", "Best value"], url: import.meta.env['VITE_LEMON_SQUEEZY_YEARLY_URL'] as string | undefined, highlight: true },
 ] as const;
 
 export function PlansDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
